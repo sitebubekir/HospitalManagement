@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Randevular</title>
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+  <h1 class="mt-5">Randevular</h1>
+  <div class="mt-3">
+    <button class="btn btn-success" onclick="showRandevuForm()">Yeni Randevu</button>
+  </div>
+  <div class="mt-3">
+    <table class="table table-striped">
+      <thead>
+      <tr>
+        <th>ID</th>
+        <th>Hasta ID</th>
+        <th>Doktor ID</th>
+        <th>Tarih</th>
+        <th>İşlemler</th>
+      </tr>
+      </thead>
+      <tbody id="randevu-list"></tbody>
+    </table>
+  </div>
+
+  <div class="modal" id="randevuModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">Randevu Ekle/Düzenle</h4>
+          <button type="button" class="close" data-dismiss="modal">&times;"></button>
+        </div>
+        <div class="modal-body">
+          <form id="randevu-form">
+            <input type="hidden" id="randevuId">
+            <div class="form-group">
+              <label for="hastaId">Hasta ID:</label>
+              <input type="text" class="form-control" id="hastaId">
+            </div>
+            <div class="form-group">
+              <label for="doktorId">Doktor ID:</label>
+              <input type="text" class="form-control" id="doktorId">
+            </div>
+            <div class="form-group">
+              <label for="tarih">Tarih:</label>
+              <input type="text" class="form-control" id="tarih">
+            </div>
+            <div class="form-group">
+              <label for="saat">Saat:</label>
+              <input type="text" class="form-control" id="saat">
+            </div>
+            <button type="button" class="btn btn-primary" onclick="saveRandevu()">Kaydet</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  $(document).ready(function() {
+    loadRandevular();
+  });
+
+  function loadRandevular() {
+    $.ajax({
+      url: '/api/randevular',
+      method: 'GET',
+      success: function(data) {
+        $('#randevu-list').empty();
+        data.forEach(function(randevu) {
+          $('#randevu-list').append(
+                  `<tr>
+                            <td>${randevu.id}</td>
+                            <td>${randevu.hastaAdi}</td>
+                            <td>${randevu.doktorAdi}</td>
+                            <td>${randevu.randevuTarihi}</td>
+                            <td>${randevu.randevuSaati}</td>
+                            <td>
+                                <button class="btn btn-primary" onclick="editRandevu(${randevu.id})">Düzenle</button>
+                                <button class="btn btn-danger" onclick="deleteRandevu(${randevu.id})">Sil</button>
+                            </td>
+                        </tr>`
+          );
+        });
+      }
+    });
+  }
+
+  function showRandevuForm() {
+    $('#randevu-form')[0].reset();
+    $('#randevuId').val('');
+    $('#randevuModal').modal('show');
+  }
+
+  function editRandevu(id) {
+    $.ajax({
+      url: `/api/randevular/${id}`,
+      method: 'GET',
+      success: function(data) {
+        $('#randevuId').val(data.id);
+        $('#hastaId').val(data.hastaId);
+        $('#doktorId').val(data.doktorId);
+        $('#tarih').val(data.tarih);
+        $('#randevuModal').modal('show');
+      }
+    });
+  }
+
+  function saveRandevu() {
+    var randevu = {
+      id: $('#randevuId').val(),
+      hastaId: $('#hastaId').val(),
+      doktorId: $('#doktorId').val(),
+      randevuTarihi: $('#tarih').val(),
+      randevuSaati: $('#saat').val()
+    };
+
+    var method = randevu.id ? 'PUT' : 'POST';
+    var url = randevu.id ? `/api/randevular/${randevu.id}` : '/api/randevular';
+
+    $.ajax({
+      url: url,
+      method: method,
+      contentType: 'application/json',
+      data: JSON.stringify(randevu),
+      success: function() {
+        $('#randevuModal').modal('hide');
+        loadRandevular();
+      }
+    });
+  }
+
+  function deleteRandevu(id) {
+    if (confirm('Bu randevuyu silmek istediğinizden emin misiniz?')) {
+      $.ajax({
+        url: `/api/randevular/${id}`,
+        method: 'DELETE',
+        success: function() {
+          loadRandevular();
+        }
+      });
+    }
+  }
+</script>
+
+</body>
+</html>

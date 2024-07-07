@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Hastalar</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <h1 class="mt-5">Hastalar</h1>
+    <div class="mt-3">
+        <button class="btn btn-success" onclick="showHastaForm()">Yeni Hasta</button>
+    </div>
+    <div class="mt-3">
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Ad</th>
+                <th>Soyad</th>
+                <th>TC Kimlik No</th>
+                <th>İşlemler</th>
+            </tr>
+            </thead>
+            <tbody id="hasta-list"></tbody>
+        </table>
+    </div>
+
+    <div class="modal" id="hastaModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Hasta Ekle/Düzenle</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="hasta-form">
+                        <input type="hidden" id="hastaId">
+                        <div class="form-group">
+                            <label for="ad">Ad:</label>
+                            <input type="text" class="form-control" id="ad">
+                        </div>
+                        <div class="form-group">
+                            <label for="soyad">Soyad:</label>
+                            <input type="text" class="form-control" id="soyad">
+                        </div>
+                        <div class="form-group">
+                            <label for="tcKimlikNo">TC Kimlik No:</label>
+                            <input type="text" class="form-control" id="tcKimlikNo">
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="saveHasta()">Kaydet</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    $(document).ready(function() {
+        loadHastalar();
+    });
+
+    function loadHastalar() {
+        $.ajax({
+            url: '/api/hastalar',
+            method: 'GET',
+            success: function(data) {
+                $('#hasta-list').empty();
+                data.forEach(function(hasta) {
+                    $('#hasta-list').append(
+                        `<tr>
+                            <td>${hasta.id}</td>
+                            <td>${hasta.ad}</td>
+                            <td>${hasta.soyad}</td>
+                            <td>${hasta.tcKimlikNo}</td>
+                            <td>
+                                <button class="btn btn-primary" onclick="editHasta(${hasta.id})">Düzenle</button>
+                                <button class="btn btn-danger" onclick="deleteHasta(${hasta.id})">Sil</button>
+                            </td>
+                        </tr>`
+                    );
+                });
+            }
+        });
+    }
+
+    function showHastaForm() {
+        $('#hasta-form')[0].reset();
+        $('#hastaId').val('');
+        $('#hastaModal').modal('show');
+    }
+
+    function editHasta(id) {
+        $.ajax({
+            url: `/api/hastalar/${id}`,
+            method: 'GET',
+            success: function(data) {
+                $('#hastaId').val(data.id);
+                $('#ad').val(data.ad);
+                $('#soyad').val(data.soyad);
+                $('#tcKimlikNo').val(data.tcKimlikNo);
+                $('#hastaModal').modal('show');
+            }
+        });
+    }
+
+    function saveHasta() {
+        var hasta = {
+            id: $('#hastaId').val(),
+            ad: $('#ad').val(),
+            soyad: $('#soyad').val(),
+            tcKimlikNo: $('#tcKimlikNo').val()
+        };
+
+        var method = hasta.id ? 'PUT' : 'POST';
+        var url = hasta.id ? `/api/hastalar/${hasta.id}` : '/api/hastalar';
+
+        $.ajax({
+            url: url,
+            method: method,
+            contentType: 'application/json',
+            data: JSON.stringify(hasta),
+            success: function() {
+                $('#hastaModal').modal('hide');
+                loadHastalar();
+            }
+        });
+    }
+
+    function deleteHasta(id) {
+        if (confirm('Bu hastayı silmek istediğinizden emin misiniz?')) {
+            $.ajax({
+                url: `/api/hastalar/${id}`,
+                method: 'DELETE',
+                success: function() {
+                    loadHastalar();
+                }
+            });
+        }
+    }
+</script>
+
+</body>
+</html>
